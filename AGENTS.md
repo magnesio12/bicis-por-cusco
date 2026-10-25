@@ -12,3 +12,4 @@
 ## Project rules
 - All booking data lives in localStorage via `src/lib/rentals.ts` (no backend by user requirement); business rules (overlap, validation, pricing) live there and are covered by `src/test/rentals.test.ts`.
 - Reservation ranges are [pickup, dropoff): the return day is free for the next rider.
+- The payment step stays simulated until the owner asks for real charges; the single seam to change is marked `PASARELA DE PAGO` in the code and documented in `docs/PAGO.md`.

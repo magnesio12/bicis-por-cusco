@@ -1,3 +1,11 @@
+/* ============================================================================
+ * PASARELA DE PAGO (SIMULADA) — acá es donde se cambia al cobro real.
+ * Este es el ÚNICO componente de pago de la app. No cobra nada: muestra
+ * "Procesando…" con un setTimeout y devuelve un comprobante falso (PAY-XXXXXX).
+ * Para cobrar de verdad: reemplazar el setTimeout de pay() por un server
+ * function que cree el pago en el procesador, y confirmar la reserva desde el
+ * webhook del procesador. Guía completa: docs/PAGO.md
+ * ============================================================================ */
 import { useState } from "react";
 import { CreditCard, Loader2, Lock, Smartphone, X } from "lucide-react";
 

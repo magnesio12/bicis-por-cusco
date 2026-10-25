@@ -51,9 +51,11 @@ function Index() {
     e.preventDefault();
     const err = validate(draft, list);
     if (err) return setError(err);
-    setPaying(true);
+    setPaying(true); // abre la pasarela de pago (PaymentSheet)
   };
   const draft = { bikeId: bikeId ?? "", name, phone, pickup: pickup ?? "", dropoff: dropoff ?? "", hour };
+  // PASARELA DE PAGO: único punto donde la reserva se guarda después de pagar.
+  // Con cobro real, la confirmación llega del webhook del procesador, no de acá.
   const onPaid = (payment: PaymentInfo) => {
     setPaying(false);
     const res = create({ ...draft, payment });
@@ -179,6 +181,7 @@ function Index() {
           </div>
         </div>
       </form>
+      {/* PASARELA DE PAGO: se abre al validar la reserva. El monto es el total calculado. */}
       {paying && bikeId && pickup && dropoff && (
         <PaymentSheet amount={priceFor(bikeId, pickup, dropoff)} summary={`${BIKES.find((b) => b.id === bikeId)!.nickname} · ${nights} ${nights === 1 ? "día" : "días"}`} onPaid={onPaid} onClose={() => setPaying(false)} />
       )}
