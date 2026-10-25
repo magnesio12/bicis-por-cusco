@@ -7,6 +7,7 @@ export interface Reservation {
   bikeId: string;
   name: string;
   phone: string;
+  email?: string; // Optional only for reservations saved before email was added.
   pickup: string; // YYYY-MM-DD
   dropoff: string; // YYYY-MM-DD, exclusive day (bike free that day)
   hour: string; // HH:MM pickup time
@@ -40,7 +41,11 @@ export const toISO = (d: Date) =>
 export const fromISO = (s: string) => { const [y = 0, m = 1, d = 1] = s.split("-").map(Number); return new Date(y, m - 1, d); };
 export const addDays = (s: string, n: number) => { const d = fromISO(s); d.setDate(d.getDate() + n); return toISO(d); };
 export const daysBetween = (a: string, b: string) => Math.round((fromISO(b).getTime() - fromISO(a).getTime()) / 86400000);
-export const bikeById = (id: string) => BIKES.find((b) => b.id === id)!;
+export const bikeById = (id: string) => {
+  const bike = BIKES.find((b) => b.id === id);
+  if (!bike) throw new Error("Bici no encontrada.");
+  return bike;
+};
 export const priceFor = (bikeId: string, pickup: string, dropoff: string) =>
   BIKE_TYPES[bikeById(bikeId).type].price * Math.max(0, daysBetween(pickup, dropoff));
 export const fmtDate = (s: string) =>
@@ -63,8 +68,17 @@ export function busyDays(list: Reservation[], bikeId: string, ignoreId?: string)
 }
 
 export type Draft = Omit<Reservation, "id" | "status" | "createdAt">;
+export const normalizeEmail = (email: string) => email.trim().toLowerCase();
+export const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+export function findReservation(list: Reservation[], email: string, code: string) {
+  if (!isValidEmail(email) || !code.trim()) return undefined;
+  return list.find((r) => r.email && normalizeEmail(r.email) === normalizeEmail(email) && r.id.toUpperCase() === code.trim().toUpperCase());
+}
 export function validate(d: Draft, list: Reservation[], ignoreId?: string): string | null {
   if (!d.name.trim() || !d.phone.trim() || !d.bikeId || !d.pickup || !d.dropoff || !d.hour) return "Completá todos los campos.";
+  const legacyEdit = ignoreId && list.some((r) => r.id === ignoreId && !r.email);
+  if (!d.email && !legacyEdit) return "Poné tu correo electrónico.";
+  if (d.email && !isValidEmail(d.email)) return "Revisá el correo electrónico.";
   if (d.phone.replace(/\D/g, "").length < 7) return "Revisá el teléfono, parece incompleto.";
   if (d.dropoff <= d.pickup) return "La devolución tiene que ser después del retiro.";
   if (!HOURS.includes(d.hour)) return "Retiramos de 8:00 a 18:00.";
@@ -121,14 +135,14 @@ export function useReservations() {
   const create = (d: Draft) => {
     const err = validate(d, list);
     if (err) return { error: err };
-    const r: Reservation = { ...d, id: newId(), status: "confirmada", createdAt: toISO(new Date()) };
+    const r: Reservation = { ...d, email: normalizeEmail(d.email ?? ""), id: newId(), status: "confirmada", createdAt: toISO(new Date()) };
     save([...list, r]);
     return { reservation: r };
   };
   const update = (id: string, d: Draft) => {
     const err = validate(d, list, id);
     if (err) return { error: err };
-    save(list.map((r) => (r.id === id ? { ...r, ...d } : r)));
+    save(list.map((r) => (r.id === id ? { ...r, ...d, email: normalizeEmail(d.email ?? "") } : r)));
     return {};
   };
   const cancel = (id: string) => save(list.map((r) => (r.id === id ? { ...r, status: "cancelada" as const } : r)));
