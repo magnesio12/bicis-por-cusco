@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Project rules
+- All booking data lives in localStorage via `src/lib/rentals.ts` (no backend by user requirement); business rules (overlap, validation, pricing) live there and are covered by `src/test/rentals.test.ts`.
+- Reservation ranges are [pickup, dropoff): the return day is free for the next rider.
