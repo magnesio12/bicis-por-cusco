@@ -181,8 +181,8 @@ function Index() {
           </div>
         </div>
       </form>
+      {/* PASARELA DE PAGO: se abre al validar la reserva. El monto es el total calculado. */}
       {paying && bikeId && pickup && dropoff && (
-        {/* PASARELA DE PAGO: se abre al validar la reserva. El monto es el total calculado. */}
         <PaymentSheet amount={priceFor(bikeId, pickup, dropoff)} summary={`${BIKES.find((b) => b.id === bikeId)!.nickname} · ${nights} ${nights === 1 ? "día" : "días"}`} onPaid={onPaid} onClose={() => setPaying(false)} />
       )}
     </div>
