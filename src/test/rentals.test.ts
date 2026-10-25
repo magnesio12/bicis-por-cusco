@@ -1,10 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { isBikeFree, priceFor, validate, type Reservation } from "@/lib/rentals";
+import { findReservation, isBikeFree, priceFor, validate, type Reservation } from "@/lib/rentals";
 
 const r: Reservation = { id: "A", bikeId: "U1", name: "Lucía", phone: "+51 984 112 307", pickup: "2026-10-10", dropoff: "2026-10-13", hour: "09:00", status: "confirmada", createdAt: "2026-10-01" };
-const base = { bikeId: "U1", name: "Marco", phone: "+39 347 552 8190", hour: "10:00" };
+const base = { bikeId: "U1", name: "Marco", phone: "+39 347 552 8190", email: "marco@example.com", hour: "10:00" };
 
 describe("reglas de reserva", () => {
+  it("requiere correo para reservas nuevas", () => {
+    expect(validate({ ...base, email: "", pickup: "2026-10-20", dropoff: "2026-10-21" }, [])).not.toBeNull();
+  });
+  it("rechaza un correo sin dominio válido", () => {
+    expect(validate({ ...base, email: "marco@", pickup: "2026-10-20", dropoff: "2026-10-21" }, [])).not.toBeNull();
+  });
+  it("encuentra la reserva solamente con correo y código coincidentes", () => {
+    const booking = { ...r, email: "marco@example.com" };
+    expect(findReservation([booking], " MARCO@example.com ", " a ")?.id).toBe("A");
+    expect(findReservation([booking], "otro@example.com", "A")).toBeUndefined();
+    expect(findReservation([booking], "marco@example.com", "B")).toBeUndefined();
+  });
+  it("no permite consultar reservas antiguas sin correo", () => {
+    expect(findReservation([r], "marco@example.com", "A")).toBeUndefined();
+  });
+  it("permite al operador mover una reserva antigua sin correo", () => {
+    expect(validate({ ...base, email: undefined, pickup: "2026-10-11", dropoff: "2026-10-14" }, [r], "A")).toBeNull();
+  });
   it("rechaza devolución igual o anterior al retiro", () => {
     expect(validate({ ...base, pickup: "2026-10-20", dropoff: "2026-10-20" }, [])).toMatch(/después/);
   });
