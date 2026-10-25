@@ -36,7 +36,7 @@ function Index() {
   // Days where every bike of this type is busy
   const allBusy = useMemo(() => {
     const sets = bikes.map((b) => busyDays(list, b.id));
-    return new Set([...sets[0]].filter((d) => sets.every((s) => s.has(d))));
+    return new Set([...(sets[0] ?? [])].filter((d) => sets.every((s) => s.has(d))));
   }, [list, type]);
 
   const pick = (iso: string) => {

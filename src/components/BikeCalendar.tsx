@@ -4,10 +4,10 @@ import { toISO } from "@/lib/rentals";
 
 interface Props {
   busy: Set<string>;
-  start?: string;
-  end?: string;
-  onPick?: (iso: string) => void;
-  compact?: boolean;
+  start?: string | undefined;
+  end?: string | undefined;
+  onPick?: ((iso: string) => void) | undefined;
+  compact?: boolean | undefined;
 }
 
 const WEEK = ["L", "M", "M", "J", "V", "S", "D"];
