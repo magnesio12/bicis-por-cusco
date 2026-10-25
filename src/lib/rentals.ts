@@ -12,6 +12,7 @@ export interface Reservation {
   hour: string; // HH:MM pickup time
   status: "confirmada" | "cancelada";
   createdAt: string;
+  // PASARELA DE PAGO: método y comprobante del pago (hoy simulado, ver docs/PAGO.md)
   payment?: { method: "tarjeta" | "yape"; ref: string } | undefined;
 }
 
