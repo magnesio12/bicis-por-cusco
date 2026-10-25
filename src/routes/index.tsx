@@ -16,6 +16,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Mirá qué bicis están libres y reservá sola/o, sin escribir por Instagram. Urbanas S/35 y de montaña S/55 por día." },
       { property: "og:title", content: "Alquiler De Bicis Cusco" },
       { property: "og:description", content: "Bicis urbanas y de montaña en Cusco. Disponibilidad real y reserva al toque." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,
@@ -29,6 +31,7 @@ function Index() {
   const [bikeId, setBikeId] = useState<string>();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [hour, setHour] = useState("09:00");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Reservation | null>(null);
@@ -53,21 +56,23 @@ function Index() {
     if (err) return setError(err);
     setPaying(true); // abre la pasarela de pago (PaymentSheet)
   };
-  const draft = { bikeId: bikeId ?? "", name, phone, pickup: pickup ?? "", dropoff: dropoff ?? "", hour };
+  const draft = { bikeId: bikeId ?? "", name, phone, email, pickup: pickup ?? "", dropoff: dropoff ?? "", hour };
   // PASARELA DE PAGO: único punto donde la reserva se guarda después de pagar.
   // Con cobro real, la confirmación llega del webhook del procesador, no de acá.
   const onPaid = (payment: PaymentInfo) => {
     setPaying(false);
     const res = create({ ...draft, payment });
     if (res.error) return setError(res.error);
-    setDone(res.reservation!);
+    if (!res.reservation) return;
+    setDone(res.reservation);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const restart = () => { setDone(null); setPickup(undefined); setDropoff(undefined); setBikeId(undefined); setName(""); setPhone(""); setError(null); };
+  const restart = () => { setDone(null); setPickup(undefined); setDropoff(undefined); setBikeId(undefined); setName(""); setPhone(""); setEmail(""); setError(null); };
 
   if (done) {
-    const b = BIKES.find((x) => x.id === done.bikeId)!;
+    const b = BIKES.find((x) => x.id === done.bikeId);
+    if (!b) return null;
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
@@ -78,11 +83,13 @@ function Index() {
           <p className="mt-4 inline-block rounded-xl bg-secondary px-5 py-3 font-display text-2xl font-bold tracking-wider text-primary">{done.id}</p>
           <dl className="mt-6 space-y-3 rounded-2xl border border-border p-5 text-left text-sm">
             <Row k="Bici" v={`${b.name} · "${b.nickname}"`} />
+            <Row k="Correo" v={<span className="break-all">{done.email}</span>} />
             <Row k="Retiro" v={`${fmtDate(done.pickup)} · ${done.hour}`} />
             <Row k="Devolución" v={`${fmtDate(done.dropoff)} · antes de las 18:00`} />
             <Row k={`Pagado con ${done.payment?.method === "yape" ? "Yape" : "tarjeta"}`} v={<span className="font-bold text-accent">S/ {priceFor(done.bikeId, done.pickup, done.dropoff)}</span>} />
             <Row k="Comprobante" v={done.payment?.ref ?? "—"} />
           </dl>
+          <p role="status" className="mt-4 text-sm text-muted-foreground">El correo todavía no se envía: falta configurar el dominio del negocio. Guardá tu código para gestionar la reserva en este navegador.</p>
           <p className="mt-4 flex items-center justify-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />Calle Tandapata 352, San Blas</p>
           <button onClick={restart} className="mt-8 h-12 w-full rounded-full bg-primary font-semibold text-primary-foreground">Hacer otra reserva</button>
         </main>
@@ -162,6 +169,7 @@ function Index() {
             <div className="space-y-3">
               <Field label="Nombre y apellido"><input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Lucía Fernández" autoComplete="name" className="input" /></Field>
               <Field label="WhatsApp o teléfono"><input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+51 984 000 000" autoComplete="tel" className="input" /></Field>
+              <Field label="Correo electrónico"><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" autoComplete="email" className="input" /></Field>
               <Field label="Hora de retiro">
                 <select value={hour} onChange={(e) => setHour(e.target.value)} className="input">
                   {HOURS.map((h) => <option key={h}>{h}</option>)}
@@ -183,7 +191,7 @@ function Index() {
       </form>
       {/* PASARELA DE PAGO: se abre al validar la reserva. El monto es el total calculado. */}
       {paying && bikeId && pickup && dropoff && (
-        <PaymentSheet amount={priceFor(bikeId, pickup, dropoff)} summary={`${BIKES.find((b) => b.id === bikeId)!.nickname} · ${nights} ${nights === 1 ? "día" : "días"}`} onPaid={onPaid} onClose={() => setPaying(false)} />
+        <PaymentSheet amount={priceFor(bikeId, pickup, dropoff)} summary={`${BIKES.find((b) => b.id === bikeId)?.nickname ?? "Bici"} · ${nights} ${nights === 1 ? "día" : "días"}`} onPaid={onPaid} onClose={() => setPaying(false)} />
       )}
     </div>
   );

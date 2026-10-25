@@ -15,6 +15,8 @@ export const Route = createFileRoute("/admin")({
       { name: "description", content: "Gestioná reservas y calendarios de cada bici." },
       { property: "og:title", content: "Panel del operador — Bicis Cusco" },
       { property: "og:description", content: "Reservas, calendarios y disponibilidad por bici." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -97,6 +99,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                       <div>
                         <p className="font-display font-semibold">{r.name}</p>
                         <p className="text-sm text-muted-foreground">{r.phone}</p>
+                        <p className="break-all text-sm text-muted-foreground">{r.email ?? "Sin correo (reserva anterior)"}</p>
                       </div>
                       <span className={`rounded-full px-2 py-1 text-xs font-semibold ${r.status === "confirmada" ? "bg-secondary text-primary" : "bg-busy text-busy-foreground"}`}>{r.status}</span>
                     </div>
@@ -160,6 +163,7 @@ function EditDialog({ initial, list, onClose, onSave }: { initial: Reservation |
         <div className="mt-4 space-y-3">
           <L t="Nombre"><input className="input" value={d.name} onChange={set("name")} placeholder="Ej.: Marco Rossi" /></L>
           <L t="Teléfono"><input className="input" type="tel" value={d.phone} onChange={set("phone")} placeholder="+51 984 000 000" /></L>
+          <L t="Correo electrónico"><input className="input" type="email" value={d.email ?? ""} onChange={set("email")} placeholder="tu@correo.com" /></L>
           <L t="Bici">
             <select className="input" value={d.bikeId} onChange={set("bikeId")}>
               {BIKES.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.nickname}</option>)}
