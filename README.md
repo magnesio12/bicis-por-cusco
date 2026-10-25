@@ -160,7 +160,7 @@ src/
     BikeCalendar.tsx    calendario reutilizable (mes, días ocupados, rango)
     SiteHeader.tsx      encabezado con enlace al panel
   routes/
-    __root.tsx          shell de la app + <Toaster />
+    __root.tsx          shell de la app, fuentes y pantallas de error/404
     index.tsx           reserva pública
     admin.tsx           panel del operador
   test/
