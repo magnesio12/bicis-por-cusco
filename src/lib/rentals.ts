@@ -12,6 +12,7 @@ export interface Reservation {
   hour: string; // HH:MM pickup time
   status: "confirmada" | "cancelada";
   createdAt: string;
+  payment?: { method: "tarjeta" | "yape"; ref: string } | undefined;
 }
 
 export const BIKE_TYPES: Record<BikeType, { label: string; price: number; blurb: string; emoji: string }> = {

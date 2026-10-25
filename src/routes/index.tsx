@@ -3,8 +3,9 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, Clock, MapPin } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BikeCalendar } from "@/components/BikeCalendar";
+import { PaymentSheet, type PaymentInfo } from "@/components/PaymentSheet";
 import {
-  BIKES, BIKE_TYPES, HOURS, busyDays, daysBetween, fmtDate, isBikeFree, priceFor, useReservations,
+  BIKES, BIKE_TYPES, HOURS, validate, busyDays, daysBetween, fmtDate, isBikeFree, priceFor, useReservations,
   type BikeType, type Reservation,
 } from "@/lib/rentals";
 
@@ -31,6 +32,7 @@ function Index() {
   const [hour, setHour] = useState("09:00");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Reservation | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const bikes = BIKES.filter((b) => b.type === type);
   // Days where every bike of this type is busy
@@ -47,7 +49,14 @@ function Index() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const res = create({ bikeId: bikeId ?? "", name, phone, pickup: pickup ?? "", dropoff: dropoff ?? "", hour });
+    const err = validate(draft, list);
+    if (err) return setError(err);
+    setPaying(true);
+  };
+  const draft = { bikeId: bikeId ?? "", name, phone, pickup: pickup ?? "", dropoff: dropoff ?? "", hour };
+  const onPaid = (payment: PaymentInfo) => {
+    setPaying(false);
+    const res = create({ ...draft, payment });
     if (res.error) return setError(res.error);
     setDone(res.reservation!);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -69,7 +78,8 @@ function Index() {
             <Row k="Bici" v={`${b.name} · "${b.nickname}"`} />
             <Row k="Retiro" v={`${fmtDate(done.pickup)} · ${done.hour}`} />
             <Row k="Devolución" v={`${fmtDate(done.dropoff)} · antes de las 18:00`} />
-            <Row k="Total a pagar al retirar" v={<span className="font-bold text-accent">S/ {priceFor(done.bikeId, done.pickup, done.dropoff)}</span>} />
+            <Row k={`Pagado con ${done.payment?.method === "yape" ? "Yape" : "tarjeta"}`} v={<span className="font-bold text-accent">S/ {priceFor(done.bikeId, done.pickup, done.dropoff)}</span>} />
+            <Row k="Comprobante" v={done.payment?.ref ?? "—"} />
           </dl>
           <p className="mt-4 flex items-center justify-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />Calle Tandapata 352, San Blas</p>
           <button onClick={restart} className="mt-8 h-12 w-full rounded-full bg-primary font-semibold text-primary-foreground">Hacer otra reserva</button>
@@ -163,12 +173,15 @@ function Index() {
           <div className="mx-auto max-w-5xl">
             {error && <p role="alert" className="mb-2 rounded-lg bg-busy px-3 py-2 text-sm font-medium text-busy-foreground">{error}</p>}
             <button type="submit" className="flex h-14 w-full items-center justify-between rounded-full bg-accent px-6 font-display font-semibold text-accent-foreground shadow-cta active:scale-[0.99]">
-              <span>Confirmar reserva</span>
+              <span>Ir a pagar</span>
               <span>{bikeId && pickup && dropoff ? `S/ ${priceFor(bikeId, pickup, dropoff)}` : "→"}</span>
             </button>
           </div>
         </div>
       </form>
+      {paying && bikeId && pickup && dropoff && (
+        <PaymentSheet amount={priceFor(bikeId, pickup, dropoff)} summary={`${BIKES.find((b) => b.id === bikeId)!.nickname} · ${nights} ${nights === 1 ? "día" : "días"}`} onPaid={onPaid} onClose={() => setPaying(false)} />
+      )}
     </div>
   );
 }

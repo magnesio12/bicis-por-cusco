@@ -102,7 +102,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                     </div>
                     <p className="mt-2 text-sm"><b>{b.name}</b> "{b.nickname}" · {fmtDate(r.pickup)} → {fmtDate(r.dropoff)} · {r.hour}</p>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="font-display font-bold text-accent">S/ {priceFor(r.bikeId, r.pickup, r.dropoff)}</span>
+                      <span className="font-display font-bold text-accent">S/ {priceFor(r.bikeId, r.pickup, r.dropoff)}<small className="ml-1 text-xs font-medium text-muted-foreground">{r.payment ? `pagado · ${r.payment.method}` : "paga al retirar"}</small></span>
                       {r.status === "confirmada" && (
                         <div className="flex gap-2">
                           <button onClick={() => setEditing(r)} className="flex h-10 items-center gap-1 rounded-full bg-secondary px-4 text-sm font-medium"><Pencil className="h-4 w-4" />Mover</button>
