@@ -127,6 +127,25 @@ Todas están en `src/lib/rentals.ts` y están cubiertas por `src/test/rentals.te
 Al recargar se mantienen; si el navegador está vacío, `seed()` carga 9 reservas de
 ejemplo del mes actual.
 
+### Cómo reiniciar los datos de ejemplo
+
+- **Desde la app:** entrá a `/admin` con `cusco2024`, abrí **Reservas**, pulsá
+  **Demo** y aceptá la confirmación. Reemplaza todas las reservas por las 9 de ejemplo.
+- **Borrando localStorage:** en las herramientas de desarrollador del navegador,
+  abrí **Application / Aplicación → Local Storage**, elegí el dominio de la app y
+  borrá la clave **`bicis-cusco-v1`**. Abrí o recargá **Reservar (`/`)**: se recrean
+  las 9 reservas del mes actual. Si recargás Admin, volvé a entrar con la clave
+  para cargarlas. También podés ejecutar en la consola de **Reservar (`/`)**:
+
+  ```js
+  localStorage.removeItem("bicis-cusco-v1");
+  location.reload();
+  ```
+
+Ambas opciones eliminan las reservas creadas, cambios y cancelaciones de ese
+navegador. No borran datos de otros dispositivos. Los ejemplos no tienen correo,
+por lo que se gestionan desde Admin, no desde la consulta por correo y código.
+
 Limitaciones de esto, para que no sorprendan después:
 
 - Las reservas **no se comparten entre dispositivos ni navegadores**: lo que reserva
