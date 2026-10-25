@@ -132,8 +132,9 @@ Izipay) y cuenta propia del negocio.
 | texto | verde muy oscuro `#1A2B1C` | cuerpo y titulares |
 
 Fuentes: **Poppins** (títulos) e **Inter** (cuerpo), por `<link>` en
-`src/routes/__root.tsx`. Los tokens y las utilidades (`bg-hero`, `shadow-cta`,
-`input`, `bg-busy`) están en `src/styles.css`. Mobile-first: se pensó y probó primero
+`src/routes/__root.tsx`. Todo el color y las sombras salen de los tokens de
+`src/styles.css`; de ahí vienen las utilidades `bg-hero`, `shadow-cta` e `input`, y
+el color `bg-busy` para lo ocupado. Mobile-first: se pensó y probó primero
 en celular (390×844).
 
 Idioma: español, trato informal con voseo. Nada de texto de relleno.
