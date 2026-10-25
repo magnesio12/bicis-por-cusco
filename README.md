@@ -19,7 +19,7 @@ npm run dev    # abre en http://localhost:8080
 | Comando | Qué hace |
 | --- | --- |
 | `npm run dev` | servidor de desarrollo con recarga en caliente |
-| `npm test` | corre los 8 tests de reglas de negocio (`vitest run`) |
+| `npm test` | corre los 8 tests (`vitest run`): 7 de reglas de negocio + 1 de rutas |
 | `npm run build` | build de producción |
 | `npm run preview` | sirve el build |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
@@ -164,8 +164,8 @@ src/
     index.tsx           reserva pública
     admin.tsx           panel del operador
   test/
-    rentals.test.ts     8 tests de reglas de negocio
-    app-routing.test.tsx
+    rentals.test.ts     7 tests de reglas de negocio
+    app-routing.test.tsx  1 test de rutas
 docs/PAGO.md            guía para pasar a cobro real
 AGENTS.md               reglas para que la IA no rompa lo acordado
 ```
