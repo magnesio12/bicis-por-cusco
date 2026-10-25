@@ -133,8 +133,9 @@ ejemplo del mes actual.
   **Demo** y aceptá la confirmación. Reemplaza todas las reservas por las 9 de ejemplo.
 - **Borrando localStorage:** en las herramientas de desarrollador del navegador,
   abrí **Application / Aplicación → Local Storage**, elegí el dominio de la app y
-  borrá la clave **`bicis-cusco-v1`**. Recargá la página: se recrean las 9 reservas
-  del mes actual. También podés ejecutar en la consola de esa misma página:
+  borrá la clave **`bicis-cusco-v1`**. Abrí o recargá **Reservar (`/`)**: se recrean
+  las 9 reservas del mes actual. Si recargás Admin, volvé a entrar con la clave
+  para cargarlas. También podés ejecutar en la consola de **Reservar (`/`)**:
 
   ```js
   localStorage.removeItem("bicis-cusco-v1");
