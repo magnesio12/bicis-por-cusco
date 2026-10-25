@@ -165,3 +165,9 @@
 }
 @utility bg-hero { background-image: var(--gradient-hero); }
 @utility shadow-cta { box-shadow: var(--shadow-cta); }
+@utility input {
+  display: block; width: 100%; height: 3rem; border-radius: var(--radius);
+  border: 1.5px solid var(--input); background: var(--background); padding: 0 0.875rem;
+  font-size: 1rem; color: var(--foreground);
+  &:focus { outline: 2px solid var(--ring); outline-offset: 1px; }
+}

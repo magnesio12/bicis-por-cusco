@@ -173,7 +173,7 @@ function EditDialog({ initial, list, onClose, onSave }: { initial: Reservation |
           <div className="rounded-2xl border border-border p-3">
             <p className="mb-1 text-sm font-medium">Ocupación de {bikeById(d.bikeId).nickname}</p>
             <BikeCalendar compact busy={busyDays(list, d.bikeId, initial?.id)} start={d.pickup} end={d.dropoff}
-              onPick={(iso) => { setError(null); setD(iso <= d.pickup || d.dropoff > d.pickup && iso !== d.dropoff && false ? { ...d, pickup: iso } : { ...d, dropoff: iso }); }} />
+              onPick={(iso) => { setError(null); setD(iso <= d.pickup ? { ...d, pickup: iso } : { ...d, dropoff: iso }); }} />
           </div>
         </div>
         {error && <p role="alert" className="mt-3 rounded-lg bg-busy px-3 py-2 text-sm font-medium text-busy-foreground">{error}</p>}
