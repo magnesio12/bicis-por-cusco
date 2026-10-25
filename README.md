@@ -4,8 +4,10 @@ App de reservas para un negocio chico de alquiler de bicicletas en Cusco. El cli
 ve la disponibilidad real, elige bici y fechas, paga (paso simulado) y recibe un
 código; el operador gestiona todo desde un panel protegido por clave.
 
-**Estado:** funciona completo de punta a punta. Sin backend: los datos viven en el
-navegador. El cobro real es un cambio a posteriori, ya separado y documentado.
+**Estado:** reserva, pago simulado y gestión local disponibles. Sin base de datos:
+los datos viven en el navegador. El envío de confirmaciones por correo está
+pendiente de configurar un dominio propio del negocio; hoy no se envía ningún correo.
+El cobro real sigue separado y documentado para más adelante.
 
 ---
 
@@ -19,7 +21,7 @@ npm run dev    # abre en http://localhost:8080
 | Comando | Qué hace |
 | --- | --- |
 | `npm run dev` | servidor de desarrollo con recarga en caliente |
-| `npm test` | corre los 8 tests (`vitest run`): 7 de reglas de negocio + 1 de rutas |
+| `npm test` | corre los tests (`vitest run`): reglas de negocio, correo/código y rutas |
 | `npm run build` | build de producción |
 | `npm run preview` | sirve el build |
 | `npm run lint` / `npm run format` | ESLint / Prettier |
@@ -32,8 +34,9 @@ npm run dev    # abre en http://localhost:8080
 | --- | --- | --- |
 | `/` | `src/routes/index.tsx` | reserva pública (catálogo → fechas → bici → datos → pago → confirmación) |
 | `/admin` | `src/routes/admin.tsx` | panel del operador, protegido por clave |
+| `/gestionar` | `src/routes/gestionar.tsx` | consulta, cambio de fechas/hora y cancelación con correo + código |
 
-No hay otras rutas. `src/routeTree.gen.ts` se genera solo: no se edita a mano.
+Estas son las tres páginas. `src/routeTree.gen.ts` se genera solo: no se edita a mano.
 Ver también `src/routes/README.md` con las convenciones de rutas de TanStack Start.
 
 ---
@@ -45,11 +48,42 @@ Ver también `src/routes/README.md` con las convenciones de rutas de TanStack St
    *todas* las bicis de ese tipo están ocupadas.
 3. **Elegí tu bici** — solo se pueden tocar las libres en esas fechas; las ocupadas
    salen apagadas.
-4. **Tus datos** — nombre, teléfono y hora de retiro.
+4. **Tus datos** — nombre, teléfono, correo electrónico obligatorio y hora de retiro.
 5. **Ir a pagar** — valida la reserva y abre la pasarela (`PaymentSheet`).
-6. **Confirmación** — código tipo `BC-XXXX`, resumen, comprobante y dirección de retiro.
+6. **Confirmación** — código tipo `BC-XXXX`, correo, resumen, comprobante y dirección de retiro. La pantalla informa que el correo todavía no se envía.
 
 El botón fijo de abajo muestra el total en vivo (`priceFor`).
+
+### Gestionar reserva (`/gestionar`)
+
+El encabezado incluye **Reservar / Gestionar reserva / Admin**. El cliente ingresa
+el correo utilizado y el código de su reserva. Ambos deben coincidir; se ignoran
+espacios externos y diferencias de mayúsculas. El resultado muestra nombre, correo,
+bici, fechas, hora, estado, total y comprobante del pago simulado.
+
+Puede cambiar fechas/hora de la misma bici (se revalidan disponibilidad y precio)
+o cancelar con confirmación. Cancelar libera las fechas. Los cambios de precio no
+cobran ni reembolsan dinero porque el pago sigue simulado. Las reservas canceladas
+se pueden consultar, pero no editar ni reactivar desde esta página.
+
+**Límite importante:** solo encuentra reservas en el mismo navegador y dispositivo.
+Correo + código es una consulta de demo, no autenticación ni protección real:
+los datos están en localStorage. No se guardan las credenciales de consulta en la URL.
+Las reservas anteriores/de ejemplo sin correo no aparecen en esta consulta; el
+operador puede seguir moviéndolas sin correo o agregarles uno desde el panel.
+
+### Confirmación por correo — pendiente
+
+El dueño pidió enviar la reserva y el código al correo ingresado después del pago
+simulado y de guardar correctamente la reserva. Falta configurar un dominio de
+envío propio del negocio; el proyecto no tiene uno y **hoy no envía correos**.
+No se muestra un aviso falso de «correo enviado» ni se simula su entrega.
+
+Una vez configurado el dominio, continuar la implementación usando los app emails
+administrados de Lovable: plantilla fija con nombre, código, bici, fechas, hora,
+total y aclaración de pago simulado; envío desde servidor a un único destinatario,
+con clave de idempotencia derivada de la reserva. No crear colas ni tablas de correo.
+La gestión seguirá limitada a este navegador mientras las reservas sean locales.
 
 ## 4. Panel del operador (`/admin`)
 
@@ -62,6 +96,7 @@ pantalla de acceso porque es una demo; hay que cambiarla antes de publicar.
 - **Calendarios:** un calendario por bici con sus días ocupados.
 - Cada fila muestra el precio y si está `pagado · tarjeta` / `pagado · yape` o
   `paga al retirar`.
+- Se muestra el correo cuando existe y se puede agregar/editar desde el formulario.
 
 ---
 
@@ -81,6 +116,8 @@ Todas están en `src/lib/rentals.ts` y están cubiertas por `src/test/rentals.te
 | Cancelar libera las fechas | `cancel` |
 | Mover revalida todo (ignorándose a sí misma) | `update` → `validate(..., ignoreId)` |
 | Teléfono con 7 dígitos como mínimo | `validate` |
+| Correo obligatorio y con formato válido en reservas nuevas; edición de reservas antiguas sin correo permitida | `validate` |
+| Consulta exige correo y código coincidentes, sin distinguir mayúsculas y espacios externos | `findReservation`, `normalizeEmail` |
 | Precio = tarifa × días | `priceFor` |
 
 ## 6. Datos y dónde se guardan
@@ -149,7 +186,9 @@ Datos **inventados** por mí, que el dueño tiene que cambiar por los reales:
 - **Nombres y teléfonos de las 9 reservas de ejemplo** (`seed()`), y la clave
   `cusco2024`.
 
-Cosas que a propósito **no** tiene: correo, WhatsApp, notificaciones ni cobro real.
+Cosas que **no** tiene: envío de correos (pendiente de dominio), WhatsApp,
+notificaciones de cambios/cancelaciones ni cobro real. Los correos de pruebas
+con `example.com` son ejemplos, no destinatarios reales.
 
 ## 10. Estructura
 
@@ -159,13 +198,14 @@ src/
   components/
     PaymentSheet.tsx    pasarela simulada (única pantalla de pago)
     BikeCalendar.tsx    calendario reutilizable (mes, días ocupados, rango)
-    SiteHeader.tsx      encabezado con enlace al panel
+    SiteHeader.tsx      encabezado con Reservar / Gestionar reserva / Admin
   routes/
     __root.tsx          shell de la app, fuentes y pantallas de error/404
     index.tsx           reserva pública
     admin.tsx           panel del operador
+    gestionar.tsx       consulta y gestión local por correo y código
   test/
-    rentals.test.ts     7 tests de reglas de negocio
+    rentals.test.ts     reglas de reserva, correo y búsqueda por código
     app-routing.test.tsx  1 test de rutas
 docs/PAGO.md            guía para pasar a cobro real
 AGENTS.md               reglas para que la IA no rompa lo acordado

@@ -18,11 +18,11 @@ rg -n "PASARELA DE PAGO" src
 | `src/components/PaymentSheet.tsx` | 28 | `pay()` — valida tarjeta / Yape |
 | `src/components/PaymentSheet.tsx` | 40 | **`setTimeout(...)` de 1,6 s: esto es lo que se reemplaza** |
 | `src/components/PaymentSheet.tsx` | 43 | entrega el comprobante falso `PAY-XXXXXX` |
-| `src/routes/index.tsx` | 54 | abre la pasarela al validar la reserva |
-| `src/routes/index.tsx` | 57–61 | `onPaid()` — guarda la reserva después de pagar |
-| `src/routes/index.tsx` | 184–186 | monta `<PaymentSheet>` con el monto total |
-| `src/lib/rentals.ts` | 15–16 | campo `payment` de la reserva |
-| `src/lib/rentals.ts` | 121 | `create()` — hoy escribe en `localStorage` |
+| `src/routes/index.tsx` | 57 | abre la pasarela al validar la reserva |
+| `src/routes/index.tsx` | 60–68 | `onPaid()` — guarda la reserva después de pagar |
+| `src/routes/index.tsx` | 192–194 | monta `<PaymentSheet>` con el monto total |
+| `src/lib/rentals.ts` | 16–17 | campo `payment` de la reserva |
+| `src/lib/rentals.ts` | 135 | `create()` — hoy escribe en `localStorage` |
 
 `src/routes/admin.tsx` muestra en cada fila si la reserva está pagada y con qué.
 
@@ -34,6 +34,11 @@ rg -n "PASARELA DE PAGO" src
    procesador**.
 4. Devuelve `{ method, ref }` → `onPaid()` llama a `create()` → la reserva queda
    guardada en el navegador del cliente con estado `confirmada`.
+
+Ahora la reserva nueva también exige correo. `/gestionar` permite consultar,
+cambiar fechas/hora y cancelar con correo + código, solo en el mismo navegador.
+El envío del código por correo está pendiente de configurar un dominio propio;
+no se envía todavía. Ver README.md para el estado completo y el siguiente paso.
 
 ## Para que funcione en la vida real
 
