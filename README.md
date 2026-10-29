@@ -35,8 +35,9 @@ npm run dev    # abre en http://localhost:8080
 | `/` | `src/routes/index.tsx` | reserva pública (catálogo → fechas → bici → datos → pago → confirmación) |
 | `/admin` | `src/routes/admin.tsx` | panel del operador, protegido por clave |
 | `/gestionar` | `src/routes/gestionar.tsx` | consulta, cambio de fechas/hora y cancelación con correo + código |
+| `/info` | `src/routes/info.tsx` | servicios, dirección con enlace a Google Maps, horarios y redes sociales |
 
-Estas son las tres páginas. `src/routeTree.gen.ts` se genera solo: no se edita a mano.
+Estas son las cuatro páginas. `src/routeTree.gen.ts` se genera solo: no se edita a mano.
 Ver también `src/routes/README.md` con las convenciones de rutas de TanStack Start.
 
 ---
@@ -85,6 +86,20 @@ total y aclaración de pago simulado; envío desde servidor a un único destinat
 con clave de idempotencia derivada de la reserva. No crear colas ni tablas de correo.
 La gestión seguirá limitada a este navegador mientras las reservas sean locales.
 
+### Compartir por WhatsApp
+
+La confirmación tiene el botón **Compartir por WhatsApp**: abre `https://wa.me/?text=...`
+con un mensaje predefinido (código, bici, retiro, devolución, total y dirección) y el
+cliente elige a qué chat mandarlo. No envía nada automáticamente ni usa un número del
+negocio. El texto está en `whatsappSummary()` de `src/routes/index.tsx`.
+
+### Aviso sin almacenamiento local
+
+Si el navegador bloquea `localStorage` (modo privado estricto, datos del sitio
+deshabilitados), `SiteHeader` muestra un aviso rojo en todas las páginas
+(`storageAvailable()` en `src/lib/rentals.ts`). La app sigue funcionando, pero las
+reservas viven solo en memoria y se pierden al recargar.
+
 ## 4. Panel del operador (`/admin`)
 
 Clave: **`cusco2024`** (`ADMIN_KEY` en `src/lib/rentals.ts`). Está a la vista en la
@@ -93,7 +108,12 @@ pantalla de acceso porque es una demo; hay que cambiarla antes de publicar.
 - **Tres números:** reservas activas, bicis en la calle hoy, ingresos previstos.
 - **Reservas:** crear, mover (revalida reglas), cancelar (libera fechas), ver
   canceladas, restaurar los datos de ejemplo.
-- **Calendarios:** un calendario por bici con sus días ocupados.
+- **Bloquear fechas:** marca una bici como no disponible (desde/hasta inclusive,
+  motivo opcional) sin inventar un cliente. Se guarda como reserva con
+  `kind: "bloqueo"`, ocupa el calendario igual que una reserva, no suma a ingresos
+  ni a "reservas activas", no aparece en "Gestionar reserva" y se libera con
+  **Quitar bloqueo**.
+- **Calendarios:** un calendario por bici con sus días ocupados (reservas y bloqueos).
 - Cada fila muestra el precio y si está `pagado · tarjeta` / `pagado · yape` o
   `paga al retirar`.
 - Se muestra el correo cuando existe y se puede agregar/editar desde el formulario.
@@ -119,6 +139,7 @@ Todas están en `src/lib/rentals.ts` y están cubiertas por `src/test/rentals.te
 | Correo obligatorio y con formato válido en reservas nuevas; edición de reservas antiguas sin correo permitida | `validate` |
 | Consulta exige correo y código coincidentes, sin distinguir mayúsculas y espacios externos | `findReservation`, `normalizeEmail` |
 | Precio = tarifa × días | `priceFor` |
+| Bloqueo del operador: rango válido y sin pisar reservas/bloqueos; ocupa la bici | `validateBlock`, `block` |
 
 ## 6. Datos y dónde se guardan
 
@@ -202,10 +223,14 @@ Datos **inventados** por mí, que el dueño tiene que cambiar por los reales:
 - **Dirección de retiro:** `Calle Tandapata 352, San Blas` (está en la confirmación
   de `/` y en el encabezado del sitio).
 - **Apodos de las bicis:** Qori, Inti, Killa, Wayra, Apu, Kuntur, Puma (`BIKES`).
-- **Nombres y teléfonos de las 9 reservas de ejemplo** (`seed()`), y la clave
-  `cusco2024`.
+- **Nombres de las 9 reservas de ejemplo** (`seed()`); sus teléfonos son ficticios a
+  propósito (`+51 900 000 00X` y similares), y la clave `cusco2024`.
+- **Página `/info`:** redes (`@bicis.cusco` en Instagram/Facebook/TikTok), el texto
+  "incluye casco y candado" y el horario de lunes a domingo 8:00–18:00 son de ejemplo
+  (`src/routes/info.tsx`, constantes arriba del archivo).
 
-Cosas que **no** tiene: envío de correos (pendiente de dominio), WhatsApp,
+Cosas que **no** tiene: envío de correos (pendiente de dominio), WhatsApp del negocio
+(solo el botón para que el cliente comparta su resumen),
 notificaciones de cambios/cancelaciones ni cobro real. Los correos de pruebas
 con `example.com` son ejemplos, no destinatarios reales.
 
@@ -223,6 +248,7 @@ src/
     index.tsx           reserva pública
     admin.tsx           panel del operador
     gestionar.tsx       consulta y gestión local por correo y código
+    info.tsx            servicios, Google Maps, horarios y redes
   test/
     rentals.test.ts     reglas de reserva, correo y búsqueda por código
     app-routing.test.tsx  1 test de rutas
