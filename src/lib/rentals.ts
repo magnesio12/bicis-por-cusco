@@ -15,6 +15,8 @@ export interface Reservation {
   createdAt: string;
   // PASARELA DE PAGO: método y comprobante del pago (hoy simulado, ver docs/PAGO.md)
   payment?: { method: "tarjeta" | "yape"; ref: string } | undefined;
+  /** "bloqueo" = bici no disponible marcada por el operador (sin cliente). `name` guarda el motivo. */
+  kind?: "bloqueo";
 }
 
 export const BIKE_TYPES: Record<BikeType, { label: string; price: number; blurb: string; emoji: string }> = {
