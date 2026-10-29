@@ -21,7 +21,7 @@ describe("reglas de reserva", () => {
     expect(findReservation([r], "marco@example.com", "A")).toBeUndefined();
   });
   it("permite al operador mover una reserva antigua sin correo", () => {
-    expect(validate({ ...base, email: undefined, pickup: "2026-10-11", dropoff: "2026-10-14" }, [r], "A")).toBeNull();
+    expect(validate({ bikeId: base.bikeId, name: base.name, phone: base.phone, hour: base.hour, pickup: "2026-10-11", dropoff: "2026-10-14" }, [r], "A")).toBeNull();
   });
   it("rechaza devolución igual o anterior al retiro", () => {
     expect(validate({ ...base, pickup: "2026-10-20", dropoff: "2026-10-20" }, [])).toMatch(/después/);
