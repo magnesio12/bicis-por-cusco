@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { findReservation, isBikeFree, priceFor, validate, type Reservation } from "@/lib/rentals";
+import { findReservation, isBikeFree, priceFor, validate, validateBlock, type Reservation } from "@/lib/rentals";
 
-const r: Reservation = { id: "A", bikeId: "U1", name: "Lucía", phone: "+51 984 112 307", pickup: "2026-10-10", dropoff: "2026-10-13", hour: "09:00", status: "confirmada", createdAt: "2026-10-01" };
-const base = { bikeId: "U1", name: "Marco", phone: "+39 347 552 8190", email: "marco@example.com", hour: "10:00" };
+const r: Reservation = { id: "A", bikeId: "U1", name: "Lucía", phone: "+51 900 000 001", pickup: "2026-10-10", dropoff: "2026-10-13", hour: "09:00", status: "confirmada", createdAt: "2026-10-01" };
+const base = { bikeId: "U1", name: "Marco", phone: "+39 300 000 0002", email: "marco@example.com", hour: "10:00" };
 
 describe("reglas de reserva", () => {
   it("requiere correo para reservas nuevas", () => {
@@ -44,5 +44,14 @@ describe("reglas de reserva", () => {
   it("precio: urbana S/35 y montaña S/55 por día", () => {
     expect(priceFor("U1", "2026-10-01", "2026-10-03")).toBe(70);
     expect(priceFor("M1", "2026-10-01", "2026-10-02")).toBe(55);
+  });
+  it("un bloqueo del operador ocupa la bici en esas fechas", () => {
+    const b: Reservation = { ...r, id: "B", kind: "bloqueo", phone: "", bikeId: "M1" };
+    expect(isBikeFree([b], "M1", "2026-10-11", "2026-10-12")).toBe(false);
+    expect(validateBlock("U1", "2026-10-11", "2026-10-12", [r])).not.toBeNull();
+    expect(validateBlock("U1", "2026-10-13", "2026-10-14", [r])).toBeNull();
+  });
+  it("un bloqueo no aparece en la consulta de clientes", () => {
+    expect(findReservation([{ ...r, kind: "bloqueo", email: "a@b.com" }], "a@b.com", "A")).toBeUndefined();
   });
 });
