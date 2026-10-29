@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Lock, Pencil, Plus, RotateCcw, X } from "lucide-react";
+import { Ban, Lock, Pencil, Plus, RotateCcw, X } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BikeCalendar } from "@/components/BikeCalendar";
 import {
@@ -52,13 +52,14 @@ function Admin() {
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const store = useReservations();
   const [editing, setEditing] = useState<Reservation | "new" | null>(null);
+  const [blocking, setBlocking] = useState(false);
   const [tab, setTab] = useState<"reservas" | "calendarios">("reservas");
   const [showCancelled, setShowCancelled] = useState(false);
   const today = toISO(new Date());
   const rows = store.list
     .filter((r) => showCancelled || r.status === "confirmada")
     .sort((a, b) => a.pickup.localeCompare(b.pickup));
-  const active = store.list.filter((r) => r.status === "confirmada");
+  const active = store.list.filter((r) => r.status === "confirmada" && r.kind !== "bloqueo");
   const out = active.filter((r) => r.pickup <= today && today < r.dropoff).length;
 
   return (
@@ -87,12 +88,30 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)} className="h-5 w-5 accent-primary" />Ver canceladas</label>
               <div className="flex gap-2">
                 <button onClick={() => confirm("¿Restaurar los datos de ejemplo? Se pierden los cambios.") && store.reset()} className="flex h-11 items-center gap-1 rounded-full border border-border px-4 text-sm"><RotateCcw className="h-4 w-4" />Demo</button>
+                <button onClick={() => setBlocking(true)} className="flex h-11 items-center gap-1 rounded-full bg-secondary px-4 text-sm font-medium"><Ban className="h-4 w-4" />Bloquear fechas</button>
                 <button onClick={() => setEditing("new")} className="flex h-11 items-center gap-1 rounded-full bg-accent px-4 font-semibold text-accent-foreground shadow-cta"><Plus className="h-4 w-4" />Nueva</button>
               </div>
             </div>
             <ul className="mt-4 grid gap-3 md:grid-cols-2">
               {rows.map((r) => {
                 const b = bikeById(r.bikeId);
+                if (r.kind === "bloqueo") return (
+                  <li key={r.id} className={`rounded-2xl border-2 border-dashed border-border bg-secondary/50 p-4 ${r.status === "cancelada" ? "opacity-55" : ""}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="flex items-center gap-1 font-display font-semibold"><Ban className="h-4 w-4 text-busy-foreground" />No disponible</p>
+                        <p className="text-sm text-muted-foreground">{r.name}</p>
+                      </div>
+                      <span className="rounded-full bg-busy px-2 py-1 text-xs font-semibold text-busy-foreground">{r.status === "cancelada" ? "liberado" : "bloqueo"}</span>
+                    </div>
+                    <p className="mt-2 text-sm"><b>{b.name}</b> "{b.nickname}" · {fmtDate(r.pickup)} → {fmtDate(addDays(r.dropoff, -1))} (inclusive)</p>
+                    {r.status === "confirmada" && (
+                      <div className="mt-3 flex justify-end">
+                        <button onClick={() => confirm("¿Quitar este bloqueo? Las fechas quedan libres.") && store.cancel(r.id)} className="flex h-10 items-center gap-1 rounded-full border border-border px-4 text-sm font-medium"><X className="h-4 w-4" />Quitar bloqueo</button>
+                      </div>
+                    )}
+                  </li>
+                );
                 return (
                   <li key={r.id} className={`rounded-2xl border border-border p-4 ${r.status === "cancelada" ? "opacity-55" : ""}`}>
                     <div className="flex items-start justify-between gap-2">
@@ -130,6 +149,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </section>
         )}
       </main>
+      {blocking && <BlockDialog list={store.list} onClose={() => setBlocking(false)} onSave={(bikeId, from, to, reason) => {
+        const res = store.block(bikeId, from, to, reason);
+        if (!res.error) setBlocking(false);
+        return res.error ?? null;
+      }} />}
       {editing && (
         <EditDialog
           initial={editing === "new" ? null : editing}
@@ -182,6 +206,45 @@ function EditDialog({ initial, list, onClose, onSave }: { initial: Reservation |
         </div>
         {error && <p role="alert" className="mt-3 rounded-lg bg-busy px-3 py-2 text-sm font-medium text-busy-foreground">{error}</p>}
         <button className="mt-4 h-12 w-full rounded-full bg-accent font-semibold text-accent-foreground shadow-cta">Guardar</button>
+      </form>
+    </div>
+  );
+}
+
+function BlockDialog({ list, onClose, onSave }: { list: Reservation[]; onClose: () => void; onSave: (bikeId: string, from: string, to: string, reason: string) => string | null }) {
+  const today = toISO(new Date());
+  const [bikeId, setBikeId] = useState("U1");
+  const [from, setFrom] = useState(today);
+  const [to, setTo] = useState(today);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-forest-deep/60 sm:items-center" onClick={onClose}>
+      <form noValidate onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); setError(onSave(bikeId, from, to, reason)); }}
+        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-background p-5 sm:rounded-3xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">Bloquear fechas</h2>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="grid h-10 w-10 place-items-center rounded-full bg-secondary"><X className="h-5 w-5" /></button>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">La bici no se podrá reservar esos días (mantenimiento, uso propio, etc.).</p>
+        <div className="mt-4 space-y-3">
+          <L t="Bici">
+            <select className="input" value={bikeId} onChange={(e) => { setBikeId(e.target.value); setError(null); }}>
+              {BIKES.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.nickname}</option>)}
+            </select>
+          </L>
+          <div className="grid grid-cols-2 gap-3">
+            <L t="Desde"><input className="input" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setError(null); }} /></L>
+            <L t="Hasta (inclusive)"><input className="input" type="date" value={to} onChange={(e) => { setTo(e.target.value); setError(null); }} /></L>
+          </div>
+          <L t="Motivo (opcional)"><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej.: mantenimiento de frenos" /></L>
+          <div className="rounded-2xl border border-border p-3">
+            <p className="mb-1 text-sm font-medium">Ocupación de {bikeById(bikeId).nickname}</p>
+            <BikeCalendar compact busy={busyDays(list, bikeId)} start={from} end={to ? addDays(to, 1) : undefined} />
+          </div>
+        </div>
+        {error && <p role="alert" className="mt-3 rounded-lg bg-busy px-3 py-2 text-sm font-medium text-busy-foreground">{error}</p>}
+        <button className="mt-4 h-12 w-full rounded-full bg-accent font-semibold text-accent-foreground shadow-cta">Bloquear</button>
       </form>
     </div>
   );
