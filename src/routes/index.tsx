@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { CheckCircle2, Clock, MapPin } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, MessageCircle } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BikeCalendar } from "@/components/BikeCalendar";
 import { PaymentSheet, type PaymentInfo } from "@/components/PaymentSheet";
@@ -91,7 +91,11 @@ function Index() {
           </dl>
           <p role="status" className="mt-4 text-sm text-muted-foreground">El correo todavía no se envía: falta configurar el dominio del negocio. Guardá tu código para gestionar la reserva en este navegador.</p>
           <p className="mt-4 flex items-center justify-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />Calle Tandapata 352, San Blas</p>
-          <button onClick={restart} className="mt-8 h-12 w-full rounded-full bg-primary font-semibold text-primary-foreground">Hacer otra reserva</button>
+          <a href={`https://wa.me/?text=${encodeURIComponent(whatsappSummary(done, `${b.name} "${b.nickname}"`))}`} target="_blank" rel="noopener noreferrer"
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent font-semibold text-accent-foreground shadow-cta">
+            <MessageCircle className="h-5 w-5" />Compartir por WhatsApp
+          </a>
+          <button onClick={restart} className="mt-3 h-12 w-full rounded-full bg-primary font-semibold text-primary-foreground">Hacer otra reserva</button>
         </main>
       </div>
     );
@@ -210,6 +214,19 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="block"><span className="mb-1 block text-sm font-medium">{label}</span>{children}</label>;
+}
+
+/** Mensaje predefinido para compartir la reserva por WhatsApp (sin número: el cliente elige el chat). */
+function whatsappSummary(r: Reservation, bike: string) {
+  return [
+    "¡Reservé mi bici en Alquiler De Bicis Cusco! 🚲",
+    `Código: ${r.id}`,
+    `Bici: ${bike}`,
+    `Retiro: ${fmtDate(r.pickup)} a las ${r.hour}`,
+    `Devolución: ${fmtDate(r.dropoff)} antes de las 18:00`,
+    `Total: S/ ${priceFor(r.bikeId, r.pickup, r.dropoff)}`,
+    "Lugar: Calle Tandapata 352, San Blas",
+  ].join("\n");
 }
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {

@@ -20,9 +20,9 @@ rg -n "PASARELA DE PAGO" src
 | `src/components/PaymentSheet.tsx` | 43 | entrega el comprobante falso `PAY-XXXXXX` |
 | `src/routes/index.tsx` | 57 | abre la pasarela al validar la reserva |
 | `src/routes/index.tsx` | 60–68 | `onPaid()` — guarda la reserva después de pagar |
-| `src/routes/index.tsx` | 192–194 | monta `<PaymentSheet>` con el monto total |
+| `src/routes/index.tsx` | 196–198 | monta `<PaymentSheet>` con el monto total |
 | `src/lib/rentals.ts` | 16–17 | campo `payment` de la reserva |
-| `src/lib/rentals.ts` | 135 | `create()` — hoy escribe en `localStorage` |
+| `src/lib/rentals.ts` | 154 | `create()` — hoy escribe en `localStorage` |
 
 `src/routes/admin.tsx` muestra en cada fila si la reserva está pagada y con qué.
 
